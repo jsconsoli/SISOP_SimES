@@ -1,10 +1,13 @@
 {
   "integrantes": [
-    {"nome": "Nome Completo do Integrante 1"}
+    {"nome": "Eduardo Dieter Wachter"},
+    {"nome": "Joao Paulo Fritsch"},
+    {"nome": "Juliana Consoli"},
+    {"nome": "Julia Melo"}
   ],
-  "repositorio": "https://github.com/usuario/nome-do-repositorio",
-  "modulos": [],
-  "integracao": false,
+  "repositorio": "https://github.com/jsconsoli/SISOP_SimES",
+  "modulos": ["M1", "M4", "M6"],
+  "integracao": true,
   "bonus_flash": false,
   "observacoes": ""
 }

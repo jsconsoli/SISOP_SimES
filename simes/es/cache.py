@@ -28,38 +28,81 @@ Implementem CacheLRU e CacheFIFO com a interface abaixo. O simulador de E/S cham
 Política de escrita: 'write-through' ou 'write-back'.
 """
 
+from collections import OrderedDict
+
 
 class Cache:
     nome = "?"
+    atualiza_recencia = False
 
     def __init__(self, capacidade, escrita="write-back"):
         if escrita not in ("write-through", "write-back"):
             raise ValueError("escrita deve ser 'write-through' ou 'write-back'")
+        if isinstance(capacidade, bool) or not isinstance(capacidade, int) or capacidade <= 0:
+            raise ValueError("capacidade deve ser um inteiro positivo")
         self.capacidade = capacidade
         self.escrita = escrita
+        # A ordem é do bloco mais antigo para o mais recente. No FIFO, hits não
+        # alteram essa ordem; no LRU, os métodos públicos movem o bloco ao fim.
+        self._blocos = OrderedDict()
+
+    def _tocar(self, bloco):
+        if self.atualiza_recencia:
+            self._blocos.move_to_end(bloco)
+
+    def _inserir(self, bloco, sujo=False):
+        """Insere/atualiza um bloco e devolve os blocos sujos expulsos."""
+        if bloco in self._blocos:
+            if sujo:
+                self._blocos[bloco] = True
+            self._tocar(bloco)
+            return []
+
+        expulsos = []
+        if len(self._blocos) >= self.capacidade:
+            vitima, estava_sujo = self._blocos.popitem(last=False)
+            if estava_sujo:
+                expulsos.append(vitima)
+        self._blocos[bloco] = bool(sujo)
+        return expulsos
 
     def ler(self, bloco):
-        raise NotImplementedError
+        if bloco not in self._blocos:
+            return False
+        self._tocar(bloco)
+        return True
 
     def inserir(self, bloco):
-        raise NotImplementedError
+        return self._inserir(bloco)
 
     def escrever(self, bloco):
-        raise NotImplementedError
+        sujo = self.escrita == "write-back"
+        expulsos = self._inserir(bloco, sujo=sujo)
+        if self.escrita == "write-through":
+            # A escrita do usuário precisa chegar ao disco imediatamente.
+            return [bloco] + expulsos
+        return expulsos
 
     def sincronizar(self):
-        raise NotImplementedError
+        if self.escrita == "write-through":
+            return []
+        sujos = []
+        for bloco in self._blocos:
+            if self._blocos[bloco]:
+                sujos.append(bloco)
+                self._blocos[bloco] = False
+        return sujos
 
     def sujos(self):
-        raise NotImplementedError
+        return sum(self._blocos.values())
 
 
 class CacheLRU(Cache):
     nome = "LRU"
+    atualiza_recencia = True
 
     def __init__(self, capacidade, escrita="write-back"):
         super().__init__(capacidade, escrita)
-        raise NotImplementedError("TODO (M1): implementar a cache LRU")
 
 
 class CacheFIFO(Cache):
@@ -67,7 +110,6 @@ class CacheFIFO(Cache):
 
     def __init__(self, capacidade, escrita="write-back"):
         super().__init__(capacidade, escrita)
-        raise NotImplementedError("TODO (M1): implementar a cache FIFO")
 
 
 CACHES = {"LRU": CacheLRU, "FIFO": CacheFIFO}
