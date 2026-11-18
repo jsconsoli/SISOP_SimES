@@ -54,7 +54,14 @@ class SSTF(Escalonador):
     nome = "SSTF"
 
     def escolher(self, fila, cabeca, direcao, agora, max_cilindro):
-        raise NotImplementedError("TODO (núcleo N2): implementar o SSTF")
+        # min() devolve o primeiro mínimo: em empate, vence a que chegou antes.
+        indice = min(range(len(fila)), key=lambda i: abs(fila[i].cilindro - cabeca))
+        alvo = fila[indice].cilindro
+        if alvo > cabeca:
+            direcao = +1
+        elif alvo < cabeca:
+            direcao = -1
+        return indice, direcao, []
 
 
 class SCAN(Escalonador):
@@ -67,7 +74,17 @@ class SCAN(Escalonador):
     nome = "SCAN"
 
     def escolher(self, fila, cabeca, direcao, agora, max_cilindro):
-        raise NotImplementedError("TODO (núcleo N2): implementar o SCAN")
+        passar_por = []
+        a_frente = [i for i, r in enumerate(fila) if (r.cilindro - cabeca) * direcao >= 0]
+        if not a_frente:
+            # Nada à frente: vai até a borda, inverte e procura na nova direção.
+            borda = max_cilindro if direcao == +1 else 0
+            passar_por = [borda]
+            cabeca = borda
+            direcao = -direcao
+            a_frente = list(range(len(fila)))
+        indice = min(a_frente, key=lambda i: abs(fila[i].cilindro - cabeca))
+        return indice, direcao, passar_por
 
 
 # ------------------------------------------------------------------ módulo M2

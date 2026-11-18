@@ -28,9 +28,9 @@ def custo_cpu(modo, n_blocos, duracao_ms):
     """Devolve o tempo de CPU (ms) gasto com uma requisição de n_blocos que o dispositivo
     levou duracao_ms para atender."""
     if modo == "polling":
-        raise NotImplementedError("TODO (núcleo N2): custo do polling")
+        return duracao_ms
     if modo == "interrupcao":
-        raise NotImplementedError("TODO (núcleo N2): custo da interrupção")
+        return n_blocos * (P.CUSTO_INTERRUPCAO_MS + P.CUSTO_COPIA_MS_POR_BLOCO)
     if modo == "dma":
         raise NotImplementedError("TODO (M3): custo do DMA")
     raise ValueError("modo desconhecido: %s" % modo)
