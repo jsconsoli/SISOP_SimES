@@ -157,36 +157,137 @@ class SistemaArquivos:
         return None
 
     # ============================================================ TODO — núcleo (N3)
+    def _descer(self, partes):
+        """Parte da raiz e, para cada nome, lê o diretório atual e desce até a entrada."""
+        atual = self.raiz
+        for nome in partes:
+            if atual.tipo != "diretorio":
+                raise ErroSA("ENOTDIR", atual.nome)
+            self._ler_diretorio(atual)
+            if nome not in atual.entradas:
+                raise ErroSA("ENOENT", nome)
+            atual = self.fcbs[atual.entradas[nome]]
+        return atual
+
+    def _pai(self, caminho):
+        """Lê os diretórios até o pai (inclusive) e devolve (FCB do pai, último nome)."""
+        partes = self._dividir(caminho)
+        if not partes:
+            raise ErroSA("EINVAL", "a raiz não pode ser criada nem removida")
+        pai = self._descer(partes[:-1])
+        if pai.tipo != "diretorio":
+            raise ErroSA("ENOTDIR", pai.nome)
+        self._ler_diretorio(pai)
+        return pai, partes[-1]
+
+    def _criar(self, processo, caminho, tipo, n_blocos):
+        """Parte comum do mkdir e do create: cria o FCB, aloca os blocos e põe a entrada no pai."""
+        pai, nome = self._pai(caminho)
+        if nome in pai.entradas:
+            raise ErroSA("EEXIST", caminho)
+        fcb = self._novo_fcb(nome, tipo, pai.id, processo)
+        try:
+            self._aplicar(self.alocador.alocar(fcb, n_blocos))
+        except ErroSA:
+            del self.fcbs[fcb.id]          # sem espaço: o arquivo não chega a existir
+            raise
+        pai.entradas[nome] = fcb.id
+        return pai, fcb
+
     def resolver(self, caminho, seguir_simbolico=True):
         """Devolve o FCB do caminho absoluto, lendo os diretórios do caminho (ver regras).
         Erros: ENOENT, ENOTDIR. Com o M4: segue links simbólicos (inclusive no meio do
         caminho; o último componente só se seguir_simbolico=True); ELOOP depois de
         MAX_LINKS_SIMBOLICOS links."""
-        raise NotImplementedError("TODO (núcleo N3): resolver")
+        return self._descer(self._dividir(caminho))
 
     def mkdir(self, processo, caminho):
-        raise NotImplementedError("TODO (núcleo N3): mkdir")
+        pai, novo = self._criar(processo, caminho, "diretorio", 1)
+        self._gravar_diretorio(novo)
+        self._gravar_diretorio(pai)
 
     def create(self, processo, caminho, tamanho):
-        raise NotImplementedError("TODO (núcleo N3): create")
+        pai, fcb = self._criar(processo, caminho, "arquivo", self._blocos_necessarios(tamanho))
+        fcb.tamanho = tamanho
+        self._gravar_diretorio(pai)
 
     def open(self, processo, caminho, modo, handle):
-        raise NotImplementedError("TODO (núcleo N3): open")
+        if modo not in ("r", "w", "rw", "a"):
+            raise ErroSA("EINVAL", "modo inválido: %s" % modo)
+        fcb = self.resolver(caminho)
+        if fcb.tipo == "diretorio":
+            raise ErroSA("EISDIR", caminho)
+        self._verificar_permissao(processo, fcb, modo)
+        if fcb.id not in self.tabela_global:
+            self.tabela_global[fcb.id] = EntradaGlobal(fcb.id)
+        self.tabela_global[fcb.id].contador += 1
+        self.tabelas_processo.setdefault(processo, {})[handle] = EntradaProcesso(fcb.id, modo)
 
     def read(self, processo, handle, n):
-        raise NotImplementedError("TODO (núcleo N3): read")
+        entrada = self._entrada(processo, handle)
+        if "r" not in entrada.modo:
+            raise ErroSA("EBADF", "%s não foi aberto para leitura" % handle)
+        fcb = self.fcbs[entrada.fcb_id]
+        self._verificar_trava(processo, fcb)
+        inicio = entrada.posicao
+        fim = min(inicio + n, fcb.tamanho)      # não lê além do fim do arquivo
+        if fim <= inicio:
+            return 0
+        self._ler(self._blocos_do_intervalo(fcb, inicio, fim))
+        entrada.posicao = fim
+        return fim - inicio
 
     def write(self, processo, handle, n):
-        raise NotImplementedError("TODO (núcleo N3): write")
+        entrada = self._entrada(processo, handle)
+        if entrada.modo not in ("w", "rw", "a"):
+            raise ErroSA("EBADF", "%s não foi aberto para escrita" % handle)
+        fcb = self.fcbs[entrada.fcb_id]
+        self._verificar_trava(processo, fcb)
+        if entrada.modo == "a":
+            entrada.posicao = fcb.tamanho
+        inicio, fim = entrada.posicao, entrada.posicao + n
+        faltam = self._blocos_necessarios(fim) - len(fcb.blocos)
+        if faltam > 0:
+            self._aplicar(self.alocador.estender(fcb, faltam))
+        self._escrever(self._blocos_do_intervalo(fcb, inicio, fim))
+        entrada.posicao = fim
+        fcb.tamanho = max(fcb.tamanho, fim)
+        fcb.modificado_ms = self.agora_ms
+        fcb.sujo = True
+        return n
 
     def seek(self, processo, handle, posicao):
-        raise NotImplementedError("TODO (núcleo N3): seek")
+        entrada = self._entrada(processo, handle)
+        if posicao < 0:
+            raise ErroSA("EINVAL", "posição negativa")
+        entrada.posicao = posicao
 
     def close(self, processo, handle):
-        raise NotImplementedError("TODO (núcleo N3): close")
+        entrada = self._entrada(processo, handle)
+        fcb = self.fcbs[entrada.fcb_id]
+        if fcb.sujo:
+            self._gravar_diretorio(self.fcbs[fcb.pai])
+            fcb.sujo = False
+        del self.tabelas_processo[processo][handle]
+        global_ = self.tabela_global[fcb.id]
+        global_.contador -= 1
+        if global_.contador == 0:
+            del self.tabela_global[fcb.id]
+            if fcb.links == 0:              # foi removido enquanto estava aberto
+                self._liberar_arquivo(fcb)
 
     def unlink(self, processo, caminho):
-        raise NotImplementedError("TODO (núcleo N3): unlink")
+        pai, nome = self._pai(caminho)
+        if nome not in pai.entradas:
+            raise ErroSA("ENOENT", caminho)
+        fcb = self.fcbs[pai.entradas[nome]]
+        if fcb.tipo == "diretorio":
+            raise ErroSA("EISDIR", caminho)
+        del pai.entradas[nome]
+        fcb.links -= 1
+        self._gravar_diretorio(pai)
+        if fcb.links == 0 and fcb.id not in self.tabela_global:
+            self._liberar_arquivo(fcb)
 
     # ======================================================== TODO — módulo M4
     def link(self, processo, existente, novo):
