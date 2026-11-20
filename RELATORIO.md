@@ -244,7 +244,7 @@ Resultado dos testes automáticos (`python3 executar.py testes`): [cole a últim
 **Resultados:**
 
 | Alocador  | Erros | Acessos totais | Acessos/op | Tempo total (ms) |
-|---|---|---|---|---|---|
+|---|---|---|---|---|
 | contígua  | 113   | 18.151         | 7,35       | 85.274           |
 | encadeada | 0     | 191.309        | 77,5       | 31.413           |
 | FAT       | 0     | 4.690          | 1,90       | 9.886            |
