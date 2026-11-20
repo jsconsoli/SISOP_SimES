@@ -31,8 +31,8 @@ INSTRUÇÕES DO MODELO (apaguem este bloco antes de entregar)
 | N2 · Subsistema de E/S (SSTF, SCAN, polling, interrupção) | [completo / parcial] | [ ] |
 | N3 · Sistema de arquivos | [completo / parcial] | [ ] |
 | N4 · Experimentos X1–X5 e relatório | [completo / parcial] | [ ] |
-| [M? · nome do módulo] | [completo / parcial] | [ ] |
-| [Integração (grupos de 4)] | [completo / parcial] | [ ] |
+| M6 · Alocação em disco (encadeada, FAT, indexada) | completo | testes do M6 passam; X11 roda sem erros |
+| Integração (grupos de 4) | completo | `historico_para_requisicoes` em `simes/integracao.py`; X12 roda sem erros |
 | [Bônus flash] | [completo / parcial / não feito] | [ ] |
 
 Resultado dos testes automáticos (`python3 executar.py testes`): [cole a última linha, ex.: "Ran 26 tests ... OK (skipped=6)"]
@@ -55,13 +55,21 @@ Resultado dos testes automáticos (`python3 executar.py testes`): [cole a últim
 
 **Dificuldades:** [ ]
 
-### [M? — nome do módulo]
+### M6 — Alocação em disco
 
-**Onde:** [ ]
+**Onde:** `simes/arquivos/alocacao.py` (AlocadorEncadeado, AlocadorFAT, AlocadorIndexado).
 
-**Decisões:** [ ]
+**Decisões:** A encadeada guarda um cursor em `fcb.extra` e, no acesso direto, lê os blocos da corrente até o bloco desejado; ao estender, faz uma escrita extra no antigo último bloco. A FAT usa os mesmos blocos da encadeada, mas com os ponteiros em memória, então não tem acessos extras. A indexada usa blocos de índice de 1024 ponteiros, com índice de 2 níveis acima de 1024 blocos, e todo arquivo tem índice, mesmo vazio.
 
-**Dificuldades:** [ ]
+**Dificuldades:** VER SE TEVE ALGUMA 
+
+### Integração ponta a ponta
+
+**Onde:** `simes/integracao.py`, função `historico_para_requisicoes`.
+
+**Decisões:** Cada item do histórico da CamadaBloco vira uma `Requisicao`. O histórico é ordenado por instante de chegada com `sorted`, que é estável, então os acessos de uma mesma operação mantêm a ordem. Os ids são numerados de 0 em diante depois da ordenação.
+
+**Dificuldades:** O X12 leva cerca de 40 s, porque o SSTF percorre a fila inteira a cada escolha.
 
 ## 3. Experimentos
 
@@ -227,35 +235,49 @@ Resultado dos testes automáticos (`python3 executar.py testes`): [cole a últim
 
 ### X11 — Métodos de alocação (M6)
 
-**Hipótese:** [ ]
+**Hipótese:** A contígua deve ter acesso direto barato, mas sofrer com fragmentação externa e com a cópia na realocação. A encadeada deve ser a pior no acesso direto, por precisar percorrer a corrente. A FAT deve corrigir isso com os ponteiros em memória. A indexada deve ficar no meio, com 1 ou 2 leituras de índice por acesso.
 
-**Fundamentação:** [ ]
+**Fundamentação:** Silberschatz, 9ª ed., seções 12.4 e 12.5.
 
-**Configuração:** [ ]
+**Configuração:** Mesma carga (`cargas/fs_alocacao.txt`, 2468 operações) e partição de 20.000 blocos, variando só o alocador.
 
-**Resultados:** [ ]
+**Resultados:**
 
-**Evidências:** [ ]
+| Alocador  | Erros | Acessos totais | Acessos/op | Tempo total (ms) |
+|---|---|---|---|---|---|
+| contígua  | 113   | 18.151         | 7,35       | 85.274           |
+| encadeada | 0     | 191.309        | 77,5       | 31.413           |
+| FAT       | 0     | 4.690          | 1,90       | 9.886            |
+| indexada  | 0     | 10.585         | 4,29       | 35.345           |
 
-**Análise:** [ ]
+**Evidências:** resultados/arquivos.csv (experimento=X11)
 
-**Veredito:** [ ]
+**Análise:** A contígua teve 113 falhas ENOSPC e 59 realocações, mesmo com 2.052 blocos livres, porque o espaço estava dividido em 50 trechos e o maior tinha 154 blocos (fragmentação externa). Como 113 operações falharam, ela fez menos trabalho útil que as outras, então a comparação não é totalmente justa. A encadeada teve o maior número de acessos (77,5 por operação), pelo custo da corrente no acesso direto. Mesmo assim, seu tempo total ficou menor que o da indexada. Uma explicação provável, que não verificamos, é que a CamadaBloco agrupa blocos consecutivos numa única requisição e a corrente ficou quase sequencial no disco pouco fragmentado. A FAT foi a melhor nos dois critérios, mas o custo em memória da tabela não aparece na simulação. A indexada ficou no meio e deixou cerca de 134 blocos a menos livres que a encadeada e a FAT, por causa dos blocos de índice.
+
+**Veredito:** PARCIALMENTE CONFIRMADA
 
 ### X12 — Integração ponta a ponta
 
-**Hipótese:** [ ]
+**Hipótese:** Uma alocação que gera mais acessos (a indexada, por causa dos blocos de índice) deve produzir mais requisições e mais movimento do braço do disco. A cache deve ajudar mais quando há reuso de blocos, e o escalonador deve reduzir o deslocamento.
 
-**Fundamentação:** [ ]
+**Fundamentação:** Silberschatz, 9ª ed., seções 10.4, 12.4 e 13.4.
 
-**Configuração:** [ ]
+**Configuração:** Cargas `compilador` e `banco_dados`, alocadores contígua e indexada, escalonadores FCFS, SSTF e SCAN, com e sem cache LRU de 1024 blocos em write-back.
 
-**Resultados:** [ ]
+**Resultados (FCFS):**
 
-**Evidências:** [ ]
+| Carga      | Alocador | Requisições | Deslocamento | Resposta sem cache (ms) | Com LRU: acerto / resposta (ms) |
+|---|---|---|---|---|---|
+| compilador | contígua | 5.400       | 6.900        | 4.971                   | 90,4% / 0,23 |
+| compilador | indexada | 11.705      | 10.772       | 14.961                  | 95,7% / 0,17 |
+| banco_dados| contígua | 3.610       | 360.570      | 6.159                   | 4,9% / 2.151 |
+| banco_dados| indexada | 10.314      | 924.508      | 22.146                  | 74,5% / 765  |
 
-**Análise:** [ ]
+**Evidências:** resultados/es.csv (experimento=X12)
 
-**Veredito:** [ ]
+**Análise:** A hipótese se confirmou quanto ao número de requisições (a indexada gerou de 2,2 a 2,9 vezes mais) e quanto ao efeito da cache, mas só em parte quanto ao deslocamento: com SSTF e SCAN no banco de dados, a indexada teve deslocamento menor que a contígua, e com cache o SCAN piorou o deslocamento em vez de reduzi-lo. Sem cache, a resposta média da indexada foi de 3 a 3,6 vezes maior. O SSTF reduziu muito o deslocamento (por exemplo, de 924.508 para 257 no banco de dados com indexada), mas a resposta média caiu bem menos, então menos deslocamento não garante menos tempo de resposta. A cache dependeu do padrão de acesso: no compilador o acerto passou de 90%, e no banco de dados com contígua foi só 4,9%. Com a indexada, o acerto subiu para 74,5%, provavelmente porque os blocos de índice são relidos várias vezes. Isso puxa a média para baixo com requisições baratas, então comparar a resposta média por requisição entre os alocadores engana. Observação a investigar: o SCAN com cache teve deslocamento muito maior que o SSTF (por exemplo, 49.996 contra 80 no compilador com contígua). Não confirmamos a causa. Este experimento comparou só contígua e indexada.
+
+**Veredito:** PARCIALMENTE CONFIRMADA
 
 ### X13 — Armazenamento flash (bônus)
 
