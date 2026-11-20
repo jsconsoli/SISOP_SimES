@@ -199,7 +199,34 @@ class SistemaArquivos:
         Erros: ENOENT, ENOTDIR. Com o M4: segue links simbólicos (inclusive no meio do
         caminho; o último componente só se seguir_simbolico=True); ELOOP depois de
         MAX_LINKS_SIMBOLICOS links."""
-        return self._descer(self._dividir(caminho))
+        # O marcador indica componentes que pertencem ao ALVO de um link.
+        # Se algum deles não existe, o link é pendente; um componente ausente
+        # após um alvo válido não deve ser contabilizado como link pendente.
+        pendentes = [(parte, False) for parte in self._dividir(caminho)]
+        atual = self.raiz
+        links_seguidos = 0
+
+        while pendentes:
+            if atual.tipo != "diretorio":
+                raise ErroSA("ENOTDIR", atual.nome)
+            nome, pertence_ao_alvo = pendentes.pop(0)
+            self._ler_diretorio(atual)
+            if nome not in atual.entradas:
+                if pertence_ao_alvo:
+                    self.contadores["links_pendentes"] += 1
+                raise ErroSA("ENOENT", nome)
+
+            encontrado = self.fcbs[atual.entradas[nome]]
+            if encontrado.tipo == "simbolico" and (pendentes or seguir_simbolico):
+                links_seguidos += 1
+                if links_seguidos > MAX_LINKS_SIMBOLICOS:
+                    raise ErroSA("ELOOP", caminho)
+                alvo = [(parte, True) for parte in self._dividir(encontrado.alvo)]
+                pendentes = alvo + pendentes
+                atual = self.raiz             # os alvos são caminhos absolutos
+            else:
+                atual = encontrado
+        return atual
 
     def mkdir(self, processo, caminho):
         pai, novo = self._criar(processo, caminho, "diretorio", 1)
