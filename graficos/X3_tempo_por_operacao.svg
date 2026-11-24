@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="500" viewBox="0 0 900 500">
+<rect width="100%" height="100%" fill="white"/>
+<text x="450.0" y="34" text-anchor="middle" font-family="Arial" font-size="21" font-weight="bold">X3 — Tempo médio por operação</text>
+<text x="450.0" y="58" text-anchor="middle" font-family="Arial" font-size="12" fill="#475569">Tempo médio (ms)</text>
+<line x1="75" y1="395.0" x2="875" y2="395.0" stroke="#e2e8f0"/>
+<text x="67" y="399.0" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">0</text>
+<line x1="75" y1="318.8" x2="875" y2="318.8" stroke="#e2e8f0"/>
+<text x="67" y="322.8" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">3.23</text>
+<line x1="75" y1="242.5" x2="875" y2="242.5" stroke="#e2e8f0"/>
+<text x="67" y="246.5" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">6.45</text>
+<line x1="75" y1="166.2" x2="875" y2="166.2" stroke="#e2e8f0"/>
+<text x="67" y="170.2" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">9.68</text>
+<line x1="75" y1="90.0" x2="875" y2="90.0" stroke="#e2e8f0"/>
+<text x="67" y="94.0" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">12.9</text>
+<rect x="135.0" y="112.6" width="38.0" height="282.4" fill="#2563eb"/>
+<rect x="175.0" y="195.1" width="38.0" height="199.9" fill="#f97316"/>
+<text x="175.0" y="415" text-anchor="middle" font-family="Arial" font-size="11" fill="#334155">create</text>
+<rect x="335.0" y="201.1" width="38.0" height="193.9" fill="#2563eb"/>
+<rect x="375.0" y="294.6" width="38.0" height="100.4" fill="#f97316"/>
+<text x="375.0" y="415" text-anchor="middle" font-family="Arial" font-size="11" fill="#334155">open</text>
+<rect x="535.0" y="360.0" width="38.0" height="35.0" fill="#2563eb"/>
+<rect x="575.0" y="265.2" width="38.0" height="129.8" fill="#f97316"/>
+<text x="575.0" y="415" text-anchor="middle" font-family="Arial" font-size="11" fill="#334155">read</text>
+<rect x="735.0" y="373.6" width="38.0" height="21.4" fill="#2563eb"/>
+<rect x="775.0" y="264.0" width="38.0" height="131.0" fill="#f97316"/>
+<text x="775.0" y="415" text-anchor="middle" font-family="Arial" font-size="11" fill="#334155">write</text>
+<rect x="75" y="460" width="12" height="12" fill="#2563eb"/>
+<text x="92" y="470" font-family="Arial" font-size="11" fill="#334155">compilador</text>
+<rect x="185" y="460" width="12" height="12" fill="#f97316"/>
+<text x="202" y="470" font-family="Arial" font-size="11" fill="#334155">banco_dados</text>
+</svg>

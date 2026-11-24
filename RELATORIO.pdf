@@ -1,0 +1,565 @@
+%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Length 4779 >>
+stream
+BT /F2 16 Tf 48 790 Td (Relatório — SimES: simulador de E/S e de sistema de arquivos) Tj ET
+BT /F1 10 Tf 48 771 Td () Tj ET
+BT /F1 10 Tf 48 759 Td (Integrantes: Eduardo Dieter Wachter, Joao Paulo Fritsch, Juliana Consoli, Julia Melo) Tj ET
+BT /F1 10 Tf 48 747 Td () Tj ET
+BT /F1 10 Tf 48 735 Td (Repositório: https://github.com/jsconsoli/SISOP_SimES) Tj ET
+BT /F1 10 Tf 48 723 Td () Tj ET
+BT /F2 16 Tf 48 711 Td (0. Resumo) Tj ET
+BT /F1 10 Tf 48 692 Td () Tj ET
+BT /F1 10 Tf 48 680 Td (Implementamos e avaliamos o núcleo do SimES, os módulos M1 \(cache\), M4 \(links\), M6 \(alocação\) e a) Tj ET
+BT /F1 10 Tf 48 668 Td (integração ponta a ponta. Os 26 testes automáticos passaram; cinco testes de módulos fora do escopo) Tj ET
+BT /F1 10 Tf 48 656 Td (foram pulados. Nos experimentos, SSTF reduziu o tempo médio de resposta em relação ao FCFS nas quatro) Tj ET
+BT /F1 10 Tf 48 644 Td (cargas do X1, embora não tenha reduzido toda espera máxima. No X6, a cache LRU chegou a 67,0% de acertos) Tj ET
+BT /F1 10 Tf 48 632 Td (na carga com reuso. No X11, a FAT teve o menor custo de acesso medido; a alocação contígua sofreu 113) Tj ET
+BT /F1 10 Tf 48 620 Td (falhas por fragmentação externa. O X12 mostrou que cache e escalonamento podem reduzir muito o custo,) Tj ET
+BT /F1 10 Tf 48 608 Td (mas os resultados dependem do padrão de acesso.) Tj ET
+BT /F1 10 Tf 48 596 Td () Tj ET
+BT /F2 16 Tf 48 584 Td (1. Escopo realizado) Tj ET
+BT /F1 10 Tf 48 565 Td () Tj ET
+BT /F1 10 Tf 48 553 Td (Parte  |  Situação  |  Observação) Tj ET
+BT /F1 10 Tf 48 541 Td (------------------------------------------------------------------------) Tj ET
+BT /F1 10 Tf 48 529 Td (N1 · Dispositivo \(fornecido\)  |  usado  |  HDD e dispositivo rápido usados nos experimentos do) Tj ET
+BT /F1 10 Tf 48 517 Td (núcleo.) Tj ET
+BT /F1 10 Tf 48 505 Td (N2 · Subsistema de E/S \(SSTF, SCAN, polling, interrupção\)  |  completo  |  Implementados e) Tj ET
+BT /F1 10 Tf 48 493 Td (avaliados em X1 e X2.) Tj ET
+BT /F1 10 Tf 48 481 Td (N3 · Sistema de arquivos  |  completo  |  Caminhos, operações de arquivo e tabelas de arquivos) Tj ET
+BT /F1 10 Tf 48 469 Td (abertos cobertos por X3–X5.) Tj ET
+BT /F1 10 Tf 48 457 Td (N4 · Experimentos X1–X5 e relatório  |  completo  |  Resultados e gráficos em resultados/ e) Tj ET
+BT /F1 10 Tf 48 445 Td (graficos/.) Tj ET
+BT /F1 10 Tf 48 433 Td (M1 · Cache de blocos  |  completo  |  Cache LRU/FIFO, políticas de escrita e queda de energia;) Tj ET
+BT /F1 10 Tf 48 421 Td (X6 executado.) Tj ET
+BT /F1 10 Tf 48 409 Td (M4 · Links e compartilhamento  |  completo  |  Hard links, links simbólicos e tratamento de) Tj ET
+BT /F1 10 Tf 48 397 Td (ciclos; X9 executado.) Tj ET
+BT /F1 10 Tf 48 385 Td (M6 · Alocação em disco  |  completo  |  Encadeada, FAT e indexada; X11 executado.) Tj ET
+BT /F1 10 Tf 48 373 Td (Integração \(grupos de 4\)  |  completo  |  historico_para_requisicoes em simes/integracao.py; X12) Tj ET
+BT /F1 10 Tf 48 361 Td (executado.) Tj ET
+BT /F1 10 Tf 48 349 Td (Bônus flash  |  não feito  |  Fora do escopo escolhido.) Tj ET
+BT /F1 10 Tf 48 337 Td () Tj ET
+BT /F1 10 Tf 48 325 Td (Resultado dos testes automáticos \(python3 executar.py testes\): Ran 26 tests ... OK \(skipped=5\).) Tj ET
+BT /F1 10 Tf 48 313 Td () Tj ET
+BT /F2 16 Tf 48 301 Td (2. Implementação) Tj ET
+BT /F1 10 Tf 48 282 Td () Tj ET
+BT /F2 16 Tf 48 270 Td (N2 — Subsistema de E/S) Tj ET
+BT /F1 10 Tf 48 251 Td () Tj ET
+BT /F1 10 Tf 48 239 Td (Onde: simes/es/escalonadores.py \(SSTF, SCAN e fábrica de escalonadores\), simes/es/cpu.py \(custo_cpu\) e) Tj ET
+BT /F1 10 Tf 48 227 Td (simes/es/simulador.py.) Tj ET
+BT /F1 10 Tf 48 215 Td () Tj ET
+BT /F1 10 Tf 48 203 Td (Decisões: SSTF escolhe a requisição pendente mais próxima da cabeça. SCAN mantém a direção de movimento) Tj ET
+BT /F1 10 Tf 48 191 Td (e a inverte quando não há requisições à frente. O custo de CPU modela polling e interrupção) Tj ET
+BT /F1 10 Tf 48 179 Td (separadamente; o simulador processa as requisições pelos eventos de chegada e conclusão. Nos testes de) Tj ET
+BT /F1 10 Tf 48 167 Td (livro, os casos de SCAN para as duas direções e SSTF passam.) Tj ET
+BT /F1 10 Tf 48 155 Td () Tj ET
+BT /F1 10 Tf 48 143 Td (Dificuldades: O comportamento do escalonador depende da fila no instante de cada escolha. Na integração,) Tj ET
+BT /F1 10 Tf 48 131 Td (o SSTF reavalia a fila inteira a cada seleção, o que aumenta o tempo de execução do X12.) Tj ET
+BT /F1 10 Tf 48 119 Td () Tj ET
+BT /F2 16 Tf 48 107 Td (N3 — Sistema de arquivos) Tj ET
+BT /F1 10 Tf 48 88 Td () Tj ET
+BT /F1 10 Tf 48 76 Td (Onde: simes/arquivos/sistema.py, principalmente resolver, _descer, _pai, open, read, write, seek, close) Tj ET
+BT /F1 10 Tf 48 64 Td (e unlink; estruturas e tabelas ficam em simes/arquivos/estruturas.py.) Tj ET
+BT /F1 10 Tf 48 52 Td () Tj ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 19 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 3 0 R >>
+endobj
+5 0 obj
+<< /Length 5002 >>
+stream
+BT /F1 10 Tf 48 790 Td (Decisões: A resolução percorre os componentes do caminho a partir da raiz e contabiliza os acessos aos) Tj ET
+BT /F1 10 Tf 48 778 Td (diretórios. O sistema mantém uma tabela global de arquivos abertos e associa handles de processo a) Tj ET
+BT /F1 10 Tf 48 766 Td (entradas compartilhadas, com contador de aberturas. Leitura e escrita atualizam a posição do handle;) Tj ET
+BT /F1 10 Tf 48 754 Td (seek permite acesso direto. Um arquivo removido com handles ativos permanece utilizável e só tem seus) Tj ET
+BT /F1 10 Tf 48 742 Td (blocos liberados quando a última referência é fechada.) Tj ET
+BT /F1 10 Tf 48 730 Td () Tj ET
+BT /F1 10 Tf 48 718 Td (Dificuldades: Foi necessário manter coerentes as referências compartilhadas entre processos e distinguir) Tj ET
+BT /F1 10 Tf 48 706 Td (a remoção do nome no diretório da liberação efetiva dos dados. Os testes cobrem abertura compartilhada e) Tj ET
+BT /F1 10 Tf 48 694 Td (unlink com arquivo aberto.) Tj ET
+BT /F1 10 Tf 48 682 Td () Tj ET
+BT /F2 16 Tf 48 670 Td (M1 — Cache de blocos) Tj ET
+BT /F1 10 Tf 48 651 Td () Tj ET
+BT /F1 10 Tf 48 639 Td (Onde: simes/es/cache.py \(Cache, CacheLRU, CacheFIFO e criar_cache\).) Tj ET
+BT /F1 10 Tf 48 627 Td () Tj ET
+BT /F1 10 Tf 48 615 Td (Decisões: LRU atualiza a recência quando um bloco é usado; FIFO mantém a ordem de entrada. Write-through) Tj ET
+BT /F1 10 Tf 48 603 Td (envia as escritas ao dispositivo imediatamente; write-back mantém blocos sujos e os descarrega) Tj ET
+BT /F1 10 Tf 48 591 Td (posteriormente. A simulação de queda contabiliza os blocos sujos que ainda não foram persistidos.) Tj ET
+BT /F1 10 Tf 48 579 Td () Tj ET
+BT /F1 10 Tf 48 567 Td (Dificuldades: A avaliação precisa separar acertos de leitura/escrita, escritas físicas e dados ainda) Tj ET
+BT /F1 10 Tf 48 555 Td (sujos no momento da queda, porque uma taxa de acerto maior não garante menor resposta em todas as) Tj ET
+BT /F1 10 Tf 48 543 Td (métricas.) Tj ET
+BT /F1 10 Tf 48 531 Td () Tj ET
+BT /F2 16 Tf 48 519 Td (M4 — Links e compartilhamento) Tj ET
+BT /F1 10 Tf 48 500 Td () Tj ET
+BT /F1 10 Tf 48 488 Td (Onde: simes/arquivos/sistema.py \(link, symlink, resolver e percorrer\) e simes/arquivos/estruturas.py.) Tj ET
+BT /F1 10 Tf 48 476 Td () Tj ET
+BT /F1 10 Tf 48 464 Td (Decisões: Hard links compartilham o mesmo FCB e contam referências; links simbólicos armazenam um) Tj ET
+BT /F1 10 Tf 48 452 Td (caminho de destino, que pode ser seguido durante a resolução. O percurso limita e identifica ciclos, e) Tj ET
+BT /F1 10 Tf 48 440 Td (preserva erros como destino inexistente e permissão negada.) Tj ET
+BT /F1 10 Tf 48 428 Td () Tj ET
+BT /F1 10 Tf 48 416 Td (Dificuldades: Links simbólicos podem formar ciclos ou apontar para nomes removidos; a resolução precisa) Tj ET
+BT /F1 10 Tf 48 404 Td (detectar os ciclos sem confundi-los com caminhos apenas inexistentes.) Tj ET
+BT /F1 10 Tf 48 392 Td () Tj ET
+BT /F2 16 Tf 48 380 Td (M6 — Alocação em disco) Tj ET
+BT /F1 10 Tf 48 361 Td () Tj ET
+BT /F1 10 Tf 48 349 Td (Onde: simes/arquivos/alocacao.py \(AlocadorContiguo, AlocadorEncadeado, AlocadorFAT e AlocadorIndexado\).) Tj ET
+BT /F1 10 Tf 48 337 Td () Tj ET
+BT /F1 10 Tf 48 325 Td (Decisões: A encadeada guarda um cursor em fcb.extra e, no acesso direto, percorre a corrente até o bloco) Tj ET
+BT /F1 10 Tf 48 313 Td (desejado; ao estender, faz uma escrita extra no antigo último bloco. A FAT usa os mesmos blocos da) Tj ET
+BT /F1 10 Tf 48 301 Td (encadeada, mas mantém os ponteiros em memória. A indexada usa blocos de índice com 1024 ponteiros,) Tj ET
+BT /F1 10 Tf 48 289 Td (adiciona um nível acima de 1024 blocos e mantém índice mesmo para arquivo vazio.) Tj ET
+BT /F1 10 Tf 48 277 Td () Tj ET
+BT /F1 10 Tf 48 265 Td (Dificuldades: A contígua exige realocação quando não há espaço adjacente, e a fragmentação externa pode) Tj ET
+BT /F1 10 Tf 48 253 Td (impedir uma alocação mesmo com blocos livres suficientes no total. Na indexada, blocos de índice) Tj ET
+BT /F1 10 Tf 48 241 Td (consomem espaço e acessos; na encadeada, o acesso direto percorre a cadeia.) Tj ET
+BT /F1 10 Tf 48 229 Td () Tj ET
+BT /F2 16 Tf 48 217 Td (Integração ponta a ponta) Tj ET
+BT /F1 10 Tf 48 198 Td () Tj ET
+BT /F1 10 Tf 48 186 Td (Onde: simes/integracao.py, função historico_para_requisicoes.) Tj ET
+BT /F1 10 Tf 48 174 Td () Tj ET
+BT /F1 10 Tf 48 162 Td (Decisões: Cada item do histórico da CamadaBloco vira uma Requisicao. O histórico é ordenado por instante) Tj ET
+BT /F1 10 Tf 48 150 Td (de chegada com sorted, que é estável, então os acessos de uma mesma operação mantêm a ordem. Os ids são) Tj ET
+BT /F1 10 Tf 48 138 Td (numerados de 0 em diante depois da ordenação.) Tj ET
+BT /F1 10 Tf 48 126 Td () Tj ET
+BT /F1 10 Tf 48 114 Td (Dificuldades: O X12 leva cerca de 28 s nesta execução. O SSTF percorre a fila inteira a cada escolha; o) Tj ET
+BT /F1 10 Tf 48 102 Td (experimento gera milhares de requisições.) Tj ET
+BT /F1 10 Tf 48 90 Td () Tj ET
+BT /F2 16 Tf 48 78 Td (3. Experimentos) Tj ET
+BT /F1 10 Tf 48 59 Td () Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 19 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Length 5457 >>
+stream
+BT /F2 16 Tf 48 790 Td (X1 — Escalonadores sob quatro padrões de carga) Tj ET
+BT /F1 10 Tf 48 771 Td () Tj ET
+BT /F1 10 Tf 48 759 Td (Hipótese: SSTF deve reduzir deslocamento e resposta média em relação ao FCFS, pois seleciona o pedido) Tj ET
+BT /F1 10 Tf 48 747 Td (mais próximo. SCAN deve oferecer espera mais previsível ao varrer o disco, embora possa percorrer) Tj ET
+BT /F1 10 Tf 48 735 Td (cilindros sem pedidos. Sob rajadas, nenhum escalonador deve eliminar a fila causada pela sobrecarga.) Tj ET
+BT /F1 10 Tf 48 723 Td () Tj ET
+BT /F1 10 Tf 48 711 Td (Fundamentação: Silberschatz, 9ª ed., seção 10.4, “Disk Scheduling”: FCFS preserva ordem de chegada; SSTF) Tj ET
+BT /F1 10 Tf 48 699 Td (prioriza proximidade e pode causar inanição; SCAN percorre o disco alternando a direção.) Tj ET
+BT /F1 10 Tf 48 687 Td () Tj ET
+BT /F1 10 Tf 48 675 Td (Configuração: Cargas sequencial, aleatória, concentrada e em rajadas; 2.000 requisições em cada carga;) Tj ET
+BT /F1 10 Tf 48 663 Td (FCFS, SSTF e SCAN em HDD, com interrupção. Medimos resposta média, espera máxima e deslocamento total.) Tj ET
+BT /F1 10 Tf 48 651 Td () Tj ET
+BT /F1 10 Tf 48 639 Td (Resultados: Resposta média em milissegundos; valores em cada célula seguem FCFS / SSTF / SCAN.) Tj ET
+BT /F1 10 Tf 48 627 Td () Tj ET
+BT /F1 10 Tf 48 615 Td (Carga  |  FCFS  |  SSTF  |  SCAN) Tj ET
+BT /F1 10 Tf 48 603 Td (------------------------------------------------------------------------) Tj ET
+BT /F1 10 Tf 48 591 Td (Sequencial  |  10.241,05  |  17,39  |  23,21) Tj ET
+BT /F1 10 Tf 48 579 Td (Aleatória  |  50,10  |  20,99  |  31,53) Tj ET
+BT /F1 10 Tf 48 567 Td (Concentrada  |  19,80  |  15,02  |  33,20) Tj ET
+BT /F1 10 Tf 48 555 Td (Rajadas  |  266,97  |  147,49  |  148,62) Tj ET
+BT /F1 10 Tf 48 543 Td () Tj ET
+BT /F1 10 Tf 48 531 Td (Na carga em rajadas, a espera máxima foi 597,29 ms no FCFS, 296,99 ms no SSTF e 285,44 ms no SCAN. Os) Tj ET
+BT /F1 10 Tf 48 519 Td (gráficos de resposta, espera e deslocamento estão em graficos/X1_resposta_media_ms.svg,) Tj ET
+BT /F1 10 Tf 48 507 Td (graficos/X1_espera_max_ms.svg e graficos/X1_deslocamento_total.svg.) Tj ET
+BT /F1 10 Tf 48 495 Td () Tj ET
+BT /F1 10 Tf 48 483 Td (Evidências: resultados/es.csv \(experimento=X1\); graficos/X1_resposta_media_ms.svg;) Tj ET
+BT /F1 10 Tf 48 471 Td (graficos/X1_espera_max_ms.svg; graficos/X1_deslocamento_total.svg.) Tj ET
+BT /F1 10 Tf 48 459 Td () Tj ET
+BT /F1 10 Tf 48 447 Td (Análise: SSTF teve a menor resposta média nas quatro cargas. Em três delas também reduziu o deslocamento) Tj ET
+BT /F1 10 Tf 48 435 Td (em relação ao FCFS; em rajadas, o deslocamento caiu de 3.341.490 para 209.811 cilindros. SCAN teve o) Tj ET
+BT /F1 10 Tf 48 423 Td (menor deslocamento em rajadas, mas não a menor resposta média. Na carga concentrada, a espera máxima de) Tj ET
+BT /F1 10 Tf 48 411 Td (SSTF \(130,52 ms\) ficou acima de FCFS \(96,02 ms\), mostrando que a média menor não garante justiça para) Tj ET
+BT /F1 10 Tf 48 399 Td (cada requisição. Os resultados apoiam a vantagem de proximidade, mas não medem diretamente inanição em) Tj ET
+BT /F1 10 Tf 48 387 Td (uma carga ilimitada.) Tj ET
+BT /F1 10 Tf 48 375 Td () Tj ET
+BT /F1 10 Tf 48 363 Td (Veredito: PARCIALMENTE CONFIRMADA) Tj ET
+BT /F1 10 Tf 48 351 Td () Tj ET
+BT /F2 16 Tf 48 339 Td (X2 — Polling × interrupção conforme o dispositivo) Tj ET
+BT /F1 10 Tf 48 320 Td () Tj ET
+BT /F1 10 Tf 48 308 Td (Hipótese: Polling deve consumir mais CPU quando o dispositivo é lento, porque a CPU fica verificando a) Tj ET
+BT /F1 10 Tf 48 296 Td (conclusão; em dispositivos rápidos o custo da interrupção pode se aproximar ou até superar o polling.) Tj ET
+BT /F1 10 Tf 48 284 Td () Tj ET
+BT /F1 10 Tf 48 272 Td (Fundamentação: Silberschatz, 9ª ed., capítulo 13, “I/O Systems”, seções sobre hardware de E/S, polling e) Tj ET
+BT /F1 10 Tf 48 260 Td (interrupções. Polling mantém a CPU consultando o dispositivo; interrupções permitem que a CPU execute) Tj ET
+BT /F1 10 Tf 48 248 Td (outras tarefas enquanto aguarda o evento.) Tj ET
+BT /F1 10 Tf 48 236 Td () Tj ET
+BT /F1 10 Tf 48 224 Td (Configuração: HDD e dispositivo rápido; cargas aleatória e sequencial; 2.000 requisições; FCFS e) Tj ET
+BT /F1 10 Tf 48 212 Td (comparação entre polling e interrupção. Medimos a fração do tempo de CPU atribuída à E/S e também a) Tj ET
+BT /F1 10 Tf 48 200 Td (resposta média.) Tj ET
+BT /F1 10 Tf 48 188 Td () Tj ET
+BT /F1 10 Tf 48 176 Td (Resultados: Na carga aleatória, CPU de E/S foi 86,28% com polling e 1,12% com interrupção no HDD; no) Tj ET
+BT /F1 10 Tf 48 164 Td (dispositivo rápido foi 0,53% e 1,12%, respectivamente. Na sequencial, os valores foram 100,00% e 0,84%) Tj ET
+BT /F1 10 Tf 48 152 Td (no HDD, e 1,07% e 2,28% no dispositivo rápido. O tempo de resposta se manteve igual entre os modos para) Tj ET
+BT /F1 10 Tf 48 140 Td (cada dispositivo e carga.) Tj ET
+BT /F1 10 Tf 48 128 Td () Tj ET
+BT /F1 10 Tf 48 116 Td (Evidências: resultados/es.csv \(experimento=X2\); graficos/X2_cpu.svg.) Tj ET
+BT /F1 10 Tf 48 104 Td () Tj ET
+BT /F1 10 Tf 48 92 Td (Análise: No HDD, a interrupção reduziu muito a ocupação da CPU sem alterar a resposta modelada. No) Tj ET
+BT /F1 10 Tf 48 80 Td (dispositivo rápido, a interrupção teve custo de CPU maior que o polling, compatível com o custo fixo de) Tj ET
+BT /F1 10 Tf 48 68 Td (tratar interrupções quando a operação é muito curta. A hipótese se confirma para o HDD e parcialmente) Tj ET
+BT /F1 10 Tf 48 56 Td (para o dispositivo rápido.) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 19 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 7 0 R >>
+endobj
+9 0 obj
+<< /Length 4746 >>
+stream
+BT /F1 10 Tf 48 790 Td () Tj ET
+BT /F1 10 Tf 48 778 Td (Veredito: PARCIALMENTE CONFIRMADA) Tj ET
+BT /F1 10 Tf 48 766 Td () Tj ET
+BT /F2 16 Tf 48 754 Td (X3 — Acesso sequencial × direto) Tj ET
+BT /F1 10 Tf 48 735 Td () Tj ET
+BT /F1 10 Tf 48 723 Td (Hipótese: A carga de banco de dados, com operações de acesso direto, deve gerar mais operações de) Tj ET
+BT /F1 10 Tf 48 711 Td (arquivo e custo total maior que a carga sequencial do compilador; as operações de seek em si não) Tj ET
+BT /F1 10 Tf 48 699 Td (precisam acessar blocos.) Tj ET
+BT /F1 10 Tf 48 687 Td () Tj ET
+BT /F1 10 Tf 48 675 Td (Fundamentação: Silberschatz, 9ª ed., seção 11.2, “Access Methods”: acesso sequencial percorre registros) Tj ET
+BT /F1 10 Tf 48 663 Td (em ordem; acesso direto permite posicionar-se em blocos ou registros específicos.) Tj ET
+BT /F1 10 Tf 48 651 Td () Tj ET
+BT /F1 10 Tf 48 639 Td (Configuração: Cargas fs_compilador.txt e fs_banco_dados.txt, alocação contígua, sistema padrão e) Tj ET
+BT /F1 10 Tf 48 627 Td (comparação do total de operações, acessos a blocos e tempos médios.) Tj ET
+BT /F1 10 Tf 48 615 Td () Tj ET
+BT /F1 10 Tf 48 603 Td (Resultados: Compilador: 3.904 operações, zero erros, 1,38 acessos por operação e 3,07 ms por operação.) Tj ET
+BT /F1 10 Tf 48 591 Td (Banco de dados: 6.602 operações, zero erros, 0,55 acessos por operação e 3,01 ms por operação. O tempo) Tj ET
+BT /F1 10 Tf 48 579 Td (total foi 11.986,65 ms e 19.846,96 ms, respectivamente. O banco de dados executou 3.000 seeks, que não) Tj ET
+BT /F1 10 Tf 48 567 Td (geraram acessos a blocos.) Tj ET
+BT /F1 10 Tf 48 555 Td () Tj ET
+BT /F1 10 Tf 48 543 Td (Evidências: resultados/arquivos.csv e resultados/arquivos_por_operacao.csv \(experimento=X3\);) Tj ET
+BT /F1 10 Tf 48 531 Td (graficos/X3_tempo_por_operacao.svg.) Tj ET
+BT /F1 10 Tf 48 519 Td () Tj ET
+BT /F1 10 Tf 48 507 Td (Análise: A carga de banco de dados teve mais operações e maior tempo total, mas menos acessos médios por) Tj ET
+BT /F1 10 Tf 48 495 Td (operação porque os seeks não leem blocos. Assim, a diferença agregada decorre da composição e do volume) Tj ET
+BT /F1 10 Tf 48 483 Td (das operações, não de um custo alto de seek no modelo.) Tj ET
+BT /F1 10 Tf 48 471 Td () Tj ET
+BT /F1 10 Tf 48 459 Td (Veredito: PARCIALMENTE CONFIRMADA) Tj ET
+BT /F1 10 Tf 48 447 Td () Tj ET
+BT /F2 16 Tf 48 435 Td (X4 — Custo de resolver caminhos conforme a profundidade) Tj ET
+BT /F1 10 Tf 48 416 Td () Tj ET
+BT /F1 10 Tf 48 404 Td (Hipótese: O custo de open deve crescer com a quantidade de diretórios no caminho, pois é preciso) Tj ET
+BT /F1 10 Tf 48 392 Td (resolver cada componente antes de alcançar o arquivo.) Tj ET
+BT /F1 10 Tf 48 380 Td () Tj ET
+BT /F1 10 Tf 48 368 Td (Fundamentação: Silberschatz, 9ª ed., seção 11.3, “Directory Structure”, sobre caminhos e busca de) Tj ET
+BT /F1 10 Tf 48 356 Td (componentes em diretórios.) Tj ET
+BT /F1 10 Tf 48 344 Td () Tj ET
+BT /F1 10 Tf 48 332 Td (Configuração: Cargas geradas para profundidades de 1 a 10 diretórios, 20 operações de open por) Tj ET
+BT /F1 10 Tf 48 320 Td (profundidade, sistema de arquivos contíguo. Medimos acessos e tempo médio por open.) Tj ET
+BT /F1 10 Tf 48 308 Td () Tj ET
+BT /F1 10 Tf 48 296 Td (Resultados: Os acessos médios cresceram de 2 para 11 por abertura; o tempo médio cresceu de 4,25 ms para) Tj ET
+BT /F1 10 Tf 48 284 Td (4,61 ms. Cada nível acrescentou um acesso e 0,04 ms no modelo.) Tj ET
+BT /F1 10 Tf 48 272 Td () Tj ET
+BT /F1 10 Tf 48 260 Td (Evidências: resultados/arquivos_por_operacao.csv \(experimento=X4\);) Tj ET
+BT /F1 10 Tf 48 248 Td (graficos/X4_open_por_profundidade.svg.) Tj ET
+BT /F1 10 Tf 48 236 Td () Tj ET
+BT /F1 10 Tf 48 224 Td (Análise: O crescimento foi linear nos acessos e no custo temporal, como esperado. A pequena variação de) Tj ET
+BT /F1 10 Tf 48 212 Td (tempo por nível reflete os custos fixos e unitários definidos pelo simulador, não medições de um sistema) Tj ET
+BT /F1 10 Tf 48 200 Td (real.) Tj ET
+BT /F1 10 Tf 48 188 Td () Tj ET
+BT /F1 10 Tf 48 176 Td (Veredito: CONFIRMADA) Tj ET
+BT /F1 10 Tf 48 164 Td () Tj ET
+BT /F2 16 Tf 48 152 Td (X5 — Tabelas de arquivos abertos com vários processos) Tj ET
+BT /F1 10 Tf 48 133 Td () Tj ET
+BT /F1 10 Tf 48 121 Td (Hipótese: Processos que abrem um mesmo arquivo podem compartilhar uma entrada global e manter handles) Tj ET
+BT /F1 10 Tf 48 109 Td (próprios; assim, o número de entradas globais pode ser menor que a soma das entradas nas tabelas dos) Tj ET
+BT /F1 10 Tf 48 97 Td (processos.) Tj ET
+BT /F1 10 Tf 48 85 Td () Tj ET
+BT /F1 10 Tf 48 73 Td (Fundamentação: Silberschatz, 9ª ed., seção 11.1, “File Concept”, sobre arquivos abertos, descritores por) Tj ET
+BT /F1 10 Tf 48 61 Td (processo e estruturas globais de controle.) Tj ET
+BT /F1 10 Tf 48 49 Td () Tj ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 19 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 9 0 R >>
+endobj
+11 0 obj
+<< /Length 5268 >>
+stream
+BT /F1 10 Tf 48 790 Td (Configuração: Carga fs_servidor_web.txt, sistema contíguo e bloqueio consultivo. Medimos os máximos das) Tj ET
+BT /F1 10 Tf 48 778 Td (tabelas global e por processo e o contador de aberturas.) Tj ET
+BT /F1 10 Tf 48 766 Td () Tj ET
+BT /F1 10 Tf 48 754 Td (Resultados: Foram executadas 6.279 operações sem erros. Máximo de 12 entradas globais, 3 por processo e) Tj ET
+BT /F1 10 Tf 48 742 Td (24 somadas nas tabelas de processo; o maior contador de aberturas foi 6.) Tj ET
+BT /F1 10 Tf 48 730 Td () Tj ET
+BT /F1 10 Tf 48 718 Td (Evidências: resultados/arquivos.csv \(experimento=X5\); graficos/X5_tabelas.svg.) Tj ET
+BT /F1 10 Tf 48 706 Td () Tj ET
+BT /F1 10 Tf 48 694 Td (Análise: A carga exercitou handles simultâneos em mais de um processo e contadores de referências. A) Tj ET
+BT /F1 10 Tf 48 682 Td (soma máxima por processo superou a tabela global, consistente com compartilhamento de entradas globais.) Tj ET
+BT /F1 10 Tf 48 670 Td (Os máximos são picos da carga, não médias.) Tj ET
+BT /F1 10 Tf 48 658 Td () Tj ET
+BT /F1 10 Tf 48 646 Td (Veredito: CONFIRMADA) Tj ET
+BT /F1 10 Tf 48 634 Td () Tj ET
+BT /F2 16 Tf 48 622 Td (X6 — Cache de blocos \(M1\)) Tj ET
+BT /F1 10 Tf 48 603 Td () Tj ET
+BT /F1 10 Tf 48 591 Td (Hipótese: Aumentar a capacidade da cache deve elevar a taxa de acertos em uma carga com reuso.) Tj ET
+BT /F1 10 Tf 48 579 Td (Write-back deve reduzir escritas físicas e resposta, ao custo de poder perder dados sujos em uma queda;) Tj ET
+BT /F1 10 Tf 48 567 Td (LRU e FIFO podem diferir conforme a sequência de acessos.) Tj ET
+BT /F1 10 Tf 48 555 Td () Tj ET
+BT /F1 10 Tf 48 543 Td (Fundamentação: Silberschatz, 9ª ed., seção 12.6, “Efficiency and Performance”, sobre cache de buffer e) Tj ET
+BT /F1 10 Tf 48 531 Td (políticas de escrita; seção 12.7, “Recovery”, para persistência e recuperação.) Tj ET
+BT /F1 10 Tf 48 519 Td () Tj ET
+BT /F1 10 Tf 48 507 Td (Configuração: Carga es_reuso.txt, 3.000 requisições, HDD, FCFS e interrupção. LRU e FIFO com capacidades) Tj ET
+BT /F1 10 Tf 48 495 Td (de 64, 128, 256, 512, 1.024 e 2.048 blocos; write-through e write-back. Também foi simulada uma queda no) Tj ET
+BT /F1 10 Tf 48 483 Td (meio da carga.) Tj ET
+BT /F1 10 Tf 48 471 Td () Tj ET
+BT /F1 10 Tf 48 459 Td (Resultados: Com LRU write-back, a taxa de acerto aumentou de 39,64% \(64 blocos\) para 67,01% \(1.024) Tj ET
+BT /F1 10 Tf 48 447 Td (blocos\), sem ganho adicional em 2.048. As escritas físicas caíram de 1.045 no write-through para 541 em) Tj ET
+BT /F1 10 Tf 48 435 Td (write-back a partir de capacidade 512. Na queda, write-through não perdeu blocos sujos; write-back) Tj ET
+BT /F1 10 Tf 48 423 Td (perdeu de 28 a 55 blocos nas capacidades avaliadas. A melhor resposta LRU write-back foi 23,36 ms em 64) Tj ET
+BT /F1 10 Tf 48 411 Td (blocos; respostas maiores nas capacidades intermediárias mostram que taxa de acerto não determina) Tj ET
+BT /F1 10 Tf 48 399 Td (sozinha a média.) Tj ET
+BT /F1 10 Tf 48 387 Td () Tj ET
+BT /F1 10 Tf 48 375 Td (Evidências: resultados/es.csv \(experimento=X6\); graficos/X6_acerto.svg; graficos/X6_acerto_fifo.svg;) Tj ET
+BT /F1 10 Tf 48 363 Td (graficos/X6_escrita.svg.) Tj ET
+BT /F1 10 Tf 48 351 Td () Tj ET
+BT /F1 10 Tf 48 339 Td (Análise: A tendência de mais capacidade elevar acertos se confirmou até o conjunto de trabalho da carga,) Tj ET
+BT /F1 10 Tf 48 327 Td (com saturação em 1.024 blocos. Write-back reduziu as escritas físicas, mas os blocos sujos ainda em) Tj ET
+BT /F1 10 Tf 48 315 Td (cache foram contabilizados como perdidos na queda. LRU teve mais acertos que FIFO em capacidades) Tj ET
+BT /F1 10 Tf 48 303 Td (pequenas nesta carga; a diferença diminuiu em capacidades maiores. O tempo de resposta oscilou com a) Tj ET
+BT /F1 10 Tf 48 291 Td (ordem das requisições e do escalonamento, portanto não variou monotonicamente com a capacidade.) Tj ET
+BT /F1 10 Tf 48 279 Td () Tj ET
+BT /F1 10 Tf 48 267 Td (Veredito: PARCIALMENTE CONFIRMADA) Tj ET
+BT /F1 10 Tf 48 255 Td () Tj ET
+BT /F2 16 Tf 48 243 Td (X9 — Links e compartilhamento \(M4\)) Tj ET
+BT /F1 10 Tf 48 224 Td () Tj ET
+BT /F1 10 Tf 48 212 Td (Hipótese: Hard links devem compartilhar os dados do mesmo arquivo; links simbólicos devem resolver) Tj ET
+BT /F1 10 Tf 48 200 Td (caminhos válidos e a implementação deve detectar ciclos e destinos removidos.) Tj ET
+BT /F1 10 Tf 48 188 Td () Tj ET
+BT /F1 10 Tf 48 176 Td (Fundamentação: Silberschatz, 9ª ed., seção 11.3, “Directory Structure”, sobre estrutura de diretórios e) Tj ET
+BT /F1 10 Tf 48 164 Td (links; a resolução de links exige percorrer componentes e tratar referências inválidas.) Tj ET
+BT /F1 10 Tf 48 152 Td () Tj ET
+BT /F1 10 Tf 48 140 Td (Configuração: Carga fs_links.txt, alocação contígua e bloqueio consultivo; analisamos operações) Tj ET
+BT /F1 10 Tf 48 128 Td (concluídas e contadores de erros, ciclos e links pendentes.) Tj ET
+BT /F1 10 Tf 48 116 Td () Tj ET
+BT /F1 10 Tf 48 104 Td (Resultados: 56 operações, 3 erros e 258 acessos a blocos. Foram detectados 11 ciclos; a carga registrou) Tj ET
+BT /F1 10 Tf 48 92 Td (um ELOOP, um ENOENT, um EPERM e três links pendentes.) Tj ET
+BT /F1 10 Tf 48 80 Td () Tj ET
+BT /F1 10 Tf 48 68 Td (Evidências: resultados/arquivos.csv \(experimento=X9\); cargas/fs_links.txt.) Tj ET
+BT /F1 10 Tf 48 56 Td () Tj ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 19 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 11 0 R >>
+endobj
+13 0 obj
+<< /Length 5275 >>
+stream
+BT /F1 10 Tf 48 790 Td (Análise: A carga alcançou os casos previstos de links, ciclos, destino inexistente e permissão negada.) Tj ET
+BT /F1 10 Tf 48 778 Td (Os erros observados fazem parte dos cenários provocados pela carga, não indicam falha automática no) Tj ET
+BT /F1 10 Tf 48 766 Td (experimento. Os contadores confirmam a detecção, mas não medem o custo de links em sistemas reais.) Tj ET
+BT /F1 10 Tf 48 754 Td () Tj ET
+BT /F1 10 Tf 48 742 Td (Veredito: CONFIRMADA) Tj ET
+BT /F1 10 Tf 48 730 Td () Tj ET
+BT /F2 16 Tf 48 718 Td (X11 — Métodos de alocação \(M6\)) Tj ET
+BT /F1 10 Tf 48 699 Td () Tj ET
+BT /F1 10 Tf 48 687 Td (Hipótese: A contígua deve ter acesso direto barato, mas sofrer com fragmentação externa e cópia na) Tj ET
+BT /F1 10 Tf 48 675 Td (realocação. A encadeada deve ser a pior no acesso direto, por percorrer a corrente. A FAT deve reduzir) Tj ET
+BT /F1 10 Tf 48 663 Td (esse custo com ponteiros em memória. A indexada deve ficar entre as duas, com uma ou duas leituras de) Tj ET
+BT /F1 10 Tf 48 651 Td (índice por acesso.) Tj ET
+BT /F1 10 Tf 48 639 Td () Tj ET
+BT /F1 10 Tf 48 627 Td (Fundamentação: Silberschatz, 9ª ed., seções 12.4, “Allocation Methods”, e 12.5, “Free-Space Management”.) Tj ET
+BT /F1 10 Tf 48 615 Td () Tj ET
+BT /F1 10 Tf 48 603 Td (Configuração: Mesma carga \(cargas/fs_alocacao.txt, 2.468 operações\) e partição de 20.000 blocos,) Tj ET
+BT /F1 10 Tf 48 591 Td (variando apenas o alocador. Medimos erros, acessos totais, acessos por operação e tempo.) Tj ET
+BT /F1 10 Tf 48 579 Td () Tj ET
+BT /F1 10 Tf 48 567 Td (Resultados:) Tj ET
+BT /F1 10 Tf 48 555 Td () Tj ET
+BT /F1 10 Tf 48 543 Td (Alocador  |  Erros  |  Acessos totais  |  Acessos/op  |  Tempo total \(ms\)) Tj ET
+BT /F1 10 Tf 48 531 Td (------------------------------------------------------------------------) Tj ET
+BT /F1 10 Tf 48 519 Td (Contígua  |  113  |  18.151  |  7,35  |  85.273,67) Tj ET
+BT /F1 10 Tf 48 507 Td (Encadeada  |  0  |  191.309  |  77,52  |  31.412,71) Tj ET
+BT /F1 10 Tf 48 495 Td (FAT  |  0  |  4.690  |  1,90  |  9.886,22) Tj ET
+BT /F1 10 Tf 48 483 Td (Indexada  |  0  |  10.585  |  4,29  |  35.345,40) Tj ET
+BT /F1 10 Tf 48 471 Td () Tj ET
+BT /F1 10 Tf 48 459 Td (Evidências: resultados/arquivos.csv \(experimento=X11\); graficos/X11_alocacao.svg;) Tj ET
+BT /F1 10 Tf 48 447 Td (graficos/X11_fragmentacao.svg.) Tj ET
+BT /F1 10 Tf 48 435 Td () Tj ET
+BT /F1 10 Tf 48 423 Td (Análise: A contígua teve 113 falhas ENOSPC e 59 realocações, mesmo com 2.052 blocos livres: o espaço) Tj ET
+BT /F1 10 Tf 48 411 Td (estava dividido em 50 trechos e o maior tinha 154 blocos, evidência de fragmentação externa. Como houve) Tj ET
+BT /F1 10 Tf 48 399 Td (menos trabalho útil nas execuções contíguas, a comparação de tempo não é totalmente equivalente. A) Tj ET
+BT /F1 10 Tf 48 387 Td (encadeada teve mais acessos, pelo percurso no acesso direto. A FAT teve o menor custo medido, mas o) Tj ET
+BT /F1 10 Tf 48 375 Td (espaço de memória ocupado pela tabela não aparece na simulação. A indexada ficou entre FAT e encadeada) Tj ET
+BT /F1 10 Tf 48 363 Td (em acessos e usou blocos de índice adicionais. O tempo total menor da encadeada que da indexada pode) Tj ET
+BT /F1 10 Tf 48 351 Td (decorrer do agrupamento de blocos consecutivos pela CamadaBloco; não isolamos essa causa.) Tj ET
+BT /F1 10 Tf 48 339 Td () Tj ET
+BT /F1 10 Tf 48 327 Td (Veredito: PARCIALMENTE CONFIRMADA) Tj ET
+BT /F1 10 Tf 48 315 Td () Tj ET
+BT /F2 16 Tf 48 303 Td (X12 — Integração ponta a ponta) Tj ET
+BT /F1 10 Tf 48 284 Td () Tj ET
+BT /F1 10 Tf 48 272 Td (Hipótese: Uma alocação que gera mais acessos, como a indexada por causa dos blocos de índice, deve) Tj ET
+BT /F1 10 Tf 48 260 Td (produzir mais requisições e movimento do braço. Cache deve ajudar mais quando há reuso de blocos, e) Tj ET
+BT /F1 10 Tf 48 248 Td (escalonadores que aproximam acessos devem reduzir o deslocamento.) Tj ET
+BT /F1 10 Tf 48 236 Td () Tj ET
+BT /F1 10 Tf 48 224 Td (Fundamentação: Silberschatz, 9ª ed., seções 10.4, 12.4 e 12.6: escalonamento de disco, métodos de) Tj ET
+BT /F1 10 Tf 48 212 Td (alocação e eficiência de cache.) Tj ET
+BT /F1 10 Tf 48 200 Td () Tj ET
+BT /F1 10 Tf 48 188 Td (Configuração: Cargas compilador e banco_dados, alocadores contígua e indexada, escalonadores FCFS, SSTF) Tj ET
+BT /F1 10 Tf 48 176 Td (e SCAN, com e sem cache LRU de 1.024 blocos em write-back. As operações do sistema de arquivos foram) Tj ET
+BT /F1 10 Tf 48 164 Td (convertidas em requisições de E/S e executadas no HDD.) Tj ET
+BT /F1 10 Tf 48 152 Td () Tj ET
+BT /F1 10 Tf 48 140 Td (Resultados: Valores FCFS sem cache e com cache LRU, respectivamente.) Tj ET
+BT /F1 10 Tf 48 128 Td () Tj ET
+BT /F1 10 Tf 48 116 Td (Carga e alocador  |  Requisições  |  Deslocamento sem/com cache  |  Resposta média sem/com cache) Tj ET
+BT /F1 10 Tf 48 104 Td (\(ms\)  |  Acerto da cache) Tj ET
+BT /F1 10 Tf 48 92 Td (------------------------------------------------------------------------) Tj ET
+BT /F1 10 Tf 48 80 Td (Compilador, contígua  |  5.400  |  6.900 / 104  |  4.970,86 / 0,23  |  90,4%) Tj ET
+BT /F1 10 Tf 48 68 Td (Compilador, indexada  |  11.705  |  10.772 / 116  |  14.961,01 / 0,17  |  95,7%) Tj ET
+BT /F1 10 Tf 48 56 Td (Banco de dados, contígua  |  3.610  |  360.570 / 260.926  |  6.158,75 / 2.151,29  |  4,9%) Tj ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 19 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 13 0 R >>
+endobj
+15 0 obj
+<< /Length 6207 >>
+stream
+BT /F1 10 Tf 48 790 Td (Banco de dados, indexada  |  10.314  |  924.508 / 263.584  |  22.146,10 / 765,05  |  74,5%) Tj ET
+BT /F1 10 Tf 48 778 Td () Tj ET
+BT /F1 10 Tf 48 766 Td (Evidências: resultados/es.csv \(experimento=X12\); graficos/X12_resposta.svg.) Tj ET
+BT /F1 10 Tf 48 754 Td () Tj ET
+BT /F1 10 Tf 48 742 Td (Análise: A indexada gerou 2,2 a 2,9 vezes mais requisições que a contígua. A cache reduziu muito a) Tj ET
+BT /F1 10 Tf 48 730 Td (resposta média no compilador e no banco de dados com alocação indexada, onde blocos de índice são) Tj ET
+BT /F1 10 Tf 48 718 Td (reutilizados; ajudou menos no banco de dados contíguo, cuja taxa de acerto foi 4,9%. SSTF reduziu o) Tj ET
+BT /F1 10 Tf 48 706 Td (deslocamento em várias configurações, mas com cache o SCAN aumentou o deslocamento em relação ao SSTF e,) Tj ET
+BT /F1 10 Tf 48 694 Td (em alguns casos, ao FCFS. Menos deslocamento também não garante por si só menor tempo de resposta, pois) Tj ET
+BT /F1 10 Tf 48 682 Td (há fila, custo de serviço e hits de cache. O experimento apoia a hipótese sobre volume de requisições e) Tj ET
+BT /F1 10 Tf 48 670 Td (reuso, mas mostra que movimento e resposta dependem da combinação entre carga, alocador, cache e) Tj ET
+BT /F1 10 Tf 48 658 Td (escalonador.) Tj ET
+BT /F1 10 Tf 48 646 Td () Tj ET
+BT /F1 10 Tf 48 634 Td (Veredito: PARCIALMENTE CONFIRMADA) Tj ET
+BT /F1 10 Tf 48 622 Td () Tj ET
+BT /F2 16 Tf 48 610 Td (4. Relação com sistemas reais) Tj ET
+BT /F1 10 Tf 48 591 Td () Tj ET
+BT /F1 10 Tf 48 579 Td (O SimES abstrai o escalonamento em uma fila única e em HDD. O Linux usa a camada multi-queue blk-mq e) Tj ET
+BT /F1 10 Tf 48 567 Td (pode oferecer políticas como mq-deadline, bfq e none, selecionáveis conforme o dispositivo e o sistema.) Tj ET
+BT /F1 10 Tf 48 555 Td (BFQ considera compartilhamento proporcional e responsividade; esse objetivo de justiça não aparece na) Tj ET
+BT /F1 10 Tf 48 543 Td (métrica isolada de deslocamento do SimES. Documentação do blk-mq) Tj ET
+BT /F1 10 Tf 48 531 Td (\(https://docs.kernel.org/6.11/block/blk-mq.html\), seleção de escalonador) Tj ET
+BT /F1 10 Tf 48 519 Td (\(https://docs.kernel.org/6.2/block/switching-sched.html\) e BFQ) Tj ET
+BT /F1 10 Tf 48 507 Td (\(https://docs.kernel.org/block/bfq-iosched.html\).) Tj ET
+BT /F1 10 Tf 48 495 Td () Tj ET
+BT /F1 10 Tf 48 483 Td (O write-back do X6 representa uma simplificação do cache de arquivos real. O Windows mantém cache de) Tj ET
+BT /F1 10 Tf 48 471 Td (dados de arquivos e grava páginas alteradas posteriormente; também oferece opções para solicitar escrita) Tj ET
+BT /F1 10 Tf 48 459 Td (imediata. O modelo do trabalho reduz isso a capacidade, política e uma queda em instante fixo, sem) Tj ET
+BT /F1 10 Tf 48 447 Td (temporizadores adaptativos nem recuperação. Microsoft Learn — File Caching) Tj ET
+BT /F1 10 Tf 48 435 Td (\(https://learn.microsoft.com/en-us/windows/win32/fileio/file-caching\).) Tj ET
+BT /F1 10 Tf 48 423 Td () Tj ET
+BT /F1 10 Tf 48 411 Td (A carga de diretórios do X4 mostra o custo de percorrer componentes de um caminho. Sistemas reais mantêm) Tj ET
+BT /F1 10 Tf 48 399 Td (estruturas em memória e caches de nomes/metadados, então aberturas repetidas podem não repetir todos os) Tj ET
+BT /F1 10 Tf 48 387 Td (acessos físicos simulados. Os métodos de alocação do X11 ajudam a entender compromissos de contiguidade,) Tj ET
+BT /F1 10 Tf 48 375 Td (tabela e índice, mas não reproduzem integralmente ext4, NTFS ou APFS. O APFS, sistema padrão das versões) Tj ET
+BT /F1 10 Tf 48 363 Td (modernas do macOS, é projetado para armazenamento flash e inclui copy-on-write, snapshots, criptografia) Tj ET
+BT /F1 10 Tf 48 351 Td (e compartilhamento de espaço; por isso não corresponde a um único dos alocadores modelados. Apple — APFS) Tj ET
+BT /F1 10 Tf 48 339 Td (\(https://support.apple.com/en-asia/guide/security/seca6147599e/web\).) Tj ET
+BT /F1 10 Tf 48 327 Td () Tj ET
+BT /F1 10 Tf 48 315 Td (A FAT da simulação é uma tabela em memória e não representa todos os detalhes de FAT/exFAT em mídias) Tj ET
+BT /F1 10 Tf 48 303 Td (removíveis. As métricas de X9 também não representam todas as regras de permissões, recuperação e) Tj ET
+BT /F1 10 Tf 48 291 Td (concorrência de Windows, Linux ou macOS; servem para estudar a semântica simplificada de nomes,) Tj ET
+BT /F1 10 Tf 48 279 Td (referências e caminhos.) Tj ET
+BT /F1 10 Tf 48 267 Td () Tj ET
+BT /F2 16 Tf 48 255 Td (5. Limitações do simulador) Tj ET
+BT /F1 10 Tf 48 236 Td () Tj ET
+BT /F1 10 Tf 48 224 Td (  • O HDD usa custos determinísticos e não representa firmware, cache interno, filas do controlador,) Tj ET
+BT /F1 10 Tf 48 212 Td (  • setores defeituosos ou variação física. O dispositivo rápido também é uma abstração.) Tj ET
+BT /F1 10 Tf 48 200 Td (  • O simulador não mede tempo de CPU real, latência do sistema operacional ou concorrência real; os) Tj ET
+BT /F1 10 Tf 48 188 Td (  • valores são consequências das constantes e regras do modelo.) Tj ET
+BT /F1 10 Tf 48 176 Td (  • A fila única ignora múltiplas filas de hardware e a paralelização de SSDs. SSTF pode parecer) Tj ET
+BT /F1 10 Tf 48 164 Td (  • especialmente vantajoso para movimento sem capturar toda a questão de justiça.) Tj ET
+BT /F1 10 Tf 48 152 Td (  • A cache não modela memória virtual, read-ahead, writeback periódico, barreiras, journaling ou) Tj ET
+BT /F1 10 Tf 48 140 Td (  • garantias de durabilidade de sistemas reais. O cenário de queda é um evento simplificado.) Tj ET
+BT /F1 10 Tf 48 128 Td (  • Os custos de caminhos, handles, links e alocadores são contagens definidas pela implementação. Não) Tj ET
+BT /F1 10 Tf 48 116 Td (  • equivalem a benchmarks de ext4, NTFS, APFS ou exFAT.) Tj ET
+BT /F1 10 Tf 48 104 Td (  • No X11, contígua teve operações que falharam por fragmentação, então seu tempo não cobre exatamente) Tj ET
+BT /F1 10 Tf 48 92 Td (  • o mesmo trabalho útil que os demais métodos. No X12, a resposta média por requisição mistura acessos) Tj ET
+BT /F1 10 Tf 48 80 Td (  • baratos de cache e requisições físicas.) Tj ET
+BT /F1 10 Tf 48 68 Td (  • Os dados são de uma execução determinística de cada configuração; não há intervalos de confiança nem) Tj ET
+BT /F1 10 Tf 48 56 Td (  • variação de sementes para estimar dispersão.) Tj ET
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 19 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 15 0 R >>
+endobj
+17 0 obj
+<< /Length 3067 >>
+stream
+BT /F2 16 Tf 48 790 Td (6. Conclusões) Tj ET
+BT /F1 10 Tf 48 771 Td () Tj ET
+BT /F1 10 Tf 48 759 Td (  1. Nos padrões avaliados, SSTF reduziu a resposta média frente ao FCFS, mas a espera máxima pode) Tj ET
+BT /F1 10 Tf 48 747 Td (  permanecer alta para alguns pedidos.) Tj ET
+BT /F1 10 Tf 48 735 Td (  2. Interrupções pouparam CPU no HDD; no dispositivo rápido, seu custo fixo foi maior que o polling) Tj ET
+BT /F1 10 Tf 48 723 Td (  em duas cargas.) Tj ET
+BT /F1 10 Tf 48 711 Td (  3. A cache com reuso elevou acertos e write-back reduziu escritas físicas, mas deixou dados sujos) Tj ET
+BT /F1 10 Tf 48 699 Td (  vulneráveis à queda simulada.) Tj ET
+BT /F1 10 Tf 48 687 Td (  4. A alocação contígua falhou mesmo com espaço total livre por fragmentação externa; FAT teve menor) Tj ET
+BT /F1 10 Tf 48 675 Td (  custo de acesso no modelo.) Tj ET
+BT /F1 10 Tf 48 663 Td (  5. Na integração, cache e padrão de acesso mudaram substancialmente os resultados; não há um melhor) Tj ET
+BT /F1 10 Tf 48 651 Td (  escalonador ou alocador para todas as métricas.) Tj ET
+BT /F2 16 Tf 48 639 Td (7. Referências) Tj ET
+BT /F1 10 Tf 48 620 Td () Tj ET
+BT /F1 10 Tf 48 608 Td (  • SILBERSCHATZ, A.; GALVIN, P. B.; GAGNE, G. Operating System Concepts. 9. ed. Wiley, 2013.) Tj ET
+BT /F1 10 Tf 48 596 Td (  • Linux Kernel Documentation. Multi-Queue Block IO Queueing Mechanism \(blk-mq\)) Tj ET
+BT /F1 10 Tf 48 584 Td (  • \(https://docs.kernel.org/6.11/block/blk-mq.html\); Switching Scheduler) Tj ET
+BT /F1 10 Tf 48 572 Td (  • \(https://docs.kernel.org/6.2/block/switching-sched.html\); BFQ) Tj ET
+BT /F1 10 Tf 48 560 Td (  • \(https://docs.kernel.org/block/bfq-iosched.html\).) Tj ET
+BT /F1 10 Tf 48 548 Td (  • Microsoft Learn. File Caching \(https://learn.microsoft.com/en-us/windows/win32/fileio/file-caching\).) Tj ET
+BT /F1 10 Tf 48 536 Td (  • Apple Support. Role of Apple File System) Tj ET
+BT /F1 10 Tf 48 524 Td (  • \(https://support.apple.com/en-asia/guide/security/seca6147599e/web\).) Tj ET
+BT /F2 16 Tf 48 512 Td (8. Declaração de autoria e uso de IA) Tj ET
+BT /F1 10 Tf 48 493 Td () Tj ET
+BT /F1 10 Tf 48 481 Td (Quem fez o quê: O trabalho foi desenvolvido pelos quatro integrantes — Eduardo Dieter Wachter, Joao) Tj ET
+BT /F1 10 Tf 48 469 Td (Paulo Fritsch, Juliana Consoli e Julia Melo — em colaboração. A divisão individual das tarefas não foi) Tj ET
+BT /F1 10 Tf 48 457 Td (registrada no material fornecido.) Tj ET
+BT /F1 10 Tf 48 445 Td () Tj ET
+BT /F1 10 Tf 48 433 Td (Uso de ferramentas de IA:) Tj ET
+BT /F1 10 Tf 48 421 Td () Tj ET
+BT /F1 10 Tf 48 409 Td (Ferramenta  |  Finalidade  |  Onde foi usada \(arquivos ou seções\)) Tj ET
+BT /F1 10 Tf 48 397 Td (------------------------------------------------------------------------) Tj ET
+BT /F1 10 Tf 48 385 Td (ChatGPT Codex  |  Executar testes e experimentos, gerar gráficos SVG equivalentes sem) Tj ET
+BT /F1 10 Tf 48 373 Td (dependência de matplotlib e apoiar a redação e revisão do relatório.  |  graficos_svg.py,) Tj ET
+BT /F1 10 Tf 48 361 Td (graficos/, RELATORIO.md) Tj ET
+BT /F1 10 Tf 48 349 Td () Tj ET
+endstream
+endobj
+18 0 obj
+<< /Type /Page /Parent 19 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 17 0 R >>
+endobj
+19 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R 18 0 R] /Count 8 >>
+endobj
+20 0 obj
+<< /Type /Catalog /Pages 19 0 R >>
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000000015 00000 n 
+0000000112 00000 n 
+0000000214 00000 n 
+0000005045 00000 n 
+0000005182 00000 n 
+0000010236 00000 n 
+0000010373 00000 n 
+0000015882 00000 n 
+0000016019 00000 n 
+0000020817 00000 n 
+0000020955 00000 n 
+0000026276 00000 n 
+0000026415 00000 n 
+0000031743 00000 n 
+0000031882 00000 n 
+0000038142 00000 n 
+0000038281 00000 n 
+0000041401 00000 n 
+0000041540 00000 n 
+0000041645 00000 n 
+trailer
+<< /Size 21 /Root 20 0 R >>
+startxref
+41696
+%%EOF
