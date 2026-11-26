@@ -1,12 +1,12 @@
 # Relatório — SimES: simulador de E/S e de sistema de arquivos
 
-**Integrantes:** Eduardo Dieter Wachter, Joao Paulo Fritsch, Juliana Consoli, Julia Melo
+**Integrantes:** Eduardo Dieter Wachter, Joao Paulo Fritsch, Juliana Scapini Consoli, Julia Melo
 
 **Repositório:** https://github.com/jsconsoli/SISOP_SimES
 
 ## 0. Resumo
 
-Implementamos e avaliamos o núcleo do SimES, os módulos M1 (cache), M4 (links), M6 (alocação) e a integração ponta a ponta. Os 26 testes automáticos passaram; cinco testes de módulos fora do escopo foram pulados. Nos experimentos, SSTF reduziu o tempo médio de resposta em relação ao FCFS nas quatro cargas do X1, embora não tenha reduzido toda espera máxima. No X6, a cache LRU chegou a 67,0% de acertos na carga com reuso. No X11, a FAT teve o menor custo de acesso medido; a alocação contígua sofreu 113 falhas por fragmentação externa. O X12 mostrou que cache e escalonamento podem reduzir muito o custo, mas os resultados dependem do padrão de acesso.
+Implementamos e avaliamos o núcleo do SimES, os módulos M1 (cache), M4 (links), M6 (alocação) e a integração ponta a ponta. A suíte executou 26 testes: 21 foram aprovados, cinco foram ignorados e não houve falhas. Nos experimentos, SSTF reduziu o tempo médio de resposta e o deslocamento total em relação ao FCFS nas quatro cargas do X1, embora a espera máxima não tenha diminuído em todas elas. No X6, a cache LRU chegou a 67,0% de acertos na carga com reuso. No X11, a FAT teve o menor custo de acesso medido; a alocação contígua sofreu 113 falhas por fragmentação externa. O X12 mostrou que cache e escalonamento podem reduzir muito o custo, mas os resultados dependem do padrão de acesso.
 
 ## 1. Escopo realizado
 
@@ -22,7 +22,7 @@ Implementamos e avaliamos o núcleo do SimES, os módulos M1 (cache), M4 (links)
 | Integração (grupos de 4) | completo | `historico_para_requisicoes` em `simes/integracao.py`; X12 executado. |
 | Bônus flash | não feito | Fora do escopo escolhido. |
 
-Resultado dos testes automáticos (`python3 executar.py testes`): **Ran 26 tests ... OK (skipped=5)**.
+Resultado dos testes automáticos (`python3 executar.py testes`): **26 testes no total: 21 aprovados, 5 ignorados e nenhuma falha** (`OK (skipped=5)`).
 
 ## 2. Implementação
 
@@ -97,7 +97,7 @@ Na carga em rajadas, a espera máxima foi 597,29 ms no FCFS, 296,99 ms no SSTF e
 
 **Evidências:** `resultados/es.csv` (experimento=X1); `graficos/X1_resposta_media_ms.svg`; `graficos/X1_espera_max_ms.svg`; `graficos/X1_deslocamento_total.svg`.
 
-**Análise:** SSTF teve a menor resposta média nas quatro cargas. Em três delas também reduziu o deslocamento em relação ao FCFS; em rajadas, o deslocamento caiu de 3.341.490 para 209.811 cilindros. SCAN teve o menor deslocamento em rajadas, mas não a menor resposta média. Na carga concentrada, a espera máxima de SSTF (130,52 ms) ficou acima de FCFS (96,02 ms), mostrando que a média menor não garante justiça para cada requisição. Os resultados apoiam a vantagem de proximidade, mas não medem diretamente inanição em uma carga ilimitada.
+**Análise:** SSTF teve a menor resposta média e reduziu o deslocamento total nas quatro cargas em relação ao FCFS: de 7.184.093 para 2.336.365 cilindros na sequencial (67,5%); de 3.316.472 para 2.631.714 na aleatória (20,6%); de 1.864.164 para 1.613.030 na concentrada (13,5%); e de 3.341.490 para 209.811 em rajadas (93,7%). SCAN teve o menor deslocamento em rajadas, mas não a menor resposta média. Na carga concentrada, a espera máxima de SSTF (130,52 ms) ficou acima de FCFS (96,02 ms), mostrando que a média menor não garante justiça para cada requisição. Os resultados apoiam a vantagem de proximidade, mas não medem diretamente inanição em uma carga ilimitada.
 
 **Veredito:** PARCIALMENTE CONFIRMADA
 
@@ -280,7 +280,14 @@ A FAT da simulação é uma tabela em memória e não representa todos os detalh
 
 ## 8. Declaração de autoria e uso de IA
 
-**Quem fez o quê:** O trabalho foi desenvolvido pelos quatro integrantes — Eduardo Dieter Wachter, Joao Paulo Fritsch, Juliana Consoli e Julia Melo — em colaboração. A divisão individual das tarefas não foi registrada no material fornecido.
+**Quem fez o quê:** O desenvolvimento do projeto foi realizado de forma colaborativa entre os quatro integrantes, com a seguinte divisão de responsabilidades:
+
+- **Eduardo Dieter Wachter:** revisão e validação do módulo M1 (cache de blocos), relacionado ao experimento X6.
+- **Joao Paulo Fritsch:** implementação do núcleo N2 (escalonadores e CPU) e da maior parte do núcleo N3 (sistema de arquivos), relacionados aos experimentos X1 a X5.
+- **Juliana Scapini Consoli:** implementação dos módulos M4 (links e compartilhamento) e M6 (métodos de alocação), além de ajustes pontuais no núcleo N3. Suas contribuições estão relacionadas principalmente aos experimentos X9 e X11.
+- **Julia Melo:** desenvolvimento da integração entre o sistema de arquivos e o subsistema de E/S, relacionada ao experimento X12.
+
+Embora as responsabilidades tenham sido distribuídas, o desenvolvimento foi realizado de maneira colaborativa, com participação do grupo nas etapas de testes, revisão e documentação.
 
 **Uso de ferramentas de IA:**
 
