@@ -1,6 +1,6 @@
 # Relatório — SimES: simulador de E/S e de sistema de arquivos
 
-**Integrantes:** Eduardo Dieter Wachter, Joao Paulo Fritsch, Juliana Scapini Consoli, Julia Melo
+**Integrantes:** Eduardo Dieter Wachter, Joao Paulo Fritsch dos Santos, Juliana Scapini Consoli, Julia Melo Santos
 
 **Repositório:** [https://github.com/jsconsoli/SISOP_SimES](https://github.com/jsconsoli/SISOP_SimES)
 
