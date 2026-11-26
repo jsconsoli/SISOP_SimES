@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="500" viewBox="0 0 900 500">
+<rect width="100%" height="100%" fill="white"/>
+<text x="450.0" y="34" text-anchor="middle" font-family="Arial" font-size="21" font-weight="bold">X5 — Máximos das tabelas de arquivos abertos</text>
+<text x="450.0" y="58" text-anchor="middle" font-family="Arial" font-size="12" fill="#475569">Entradas</text>
+<line x1="75" y1="395.0" x2="875" y2="395.0" stroke="#e2e8f0"/>
+<text x="67" y="399.0" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">0</text>
+<line x1="75" y1="318.8" x2="875" y2="318.8" stroke="#e2e8f0"/>
+<text x="67" y="322.8" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">6.48</text>
+<line x1="75" y1="242.5" x2="875" y2="242.5" stroke="#e2e8f0"/>
+<text x="67" y="246.5" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">13</text>
+<line x1="75" y1="166.2" x2="875" y2="166.2" stroke="#e2e8f0"/>
+<text x="67" y="170.2" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">19.4</text>
+<line x1="75" y1="90.0" x2="875" y2="90.0" stroke="#e2e8f0"/>
+<text x="67" y="94.0" text-anchor="end" font-family="Arial" font-size="11" fill="#475569">25.9</text>
+<rect x="155.0" y="253.8" width="38.0" height="141.2" fill="#2563eb"/>
+<text x="175.0" y="415" text-anchor="middle" font-family="Arial" font-size="11" fill="#334155">max_tabela_global</text>
+<rect x="355.0" y="359.7" width="38.0" height="35.3" fill="#2563eb"/>
+<text x="375.0" y="415" text-anchor="middle" font-family="Arial" font-size="11" fill="#334155">max_tabela_processo</text>
+<rect x="555.0" y="112.6" width="38.0" height="282.4" fill="#2563eb"/>
+<text x="575.0" y="415" text-anchor="middle" font-family="Arial" font-size="11" fill="#334155">max_soma_tabelas_processo</text>
+<rect x="755.0" y="324.4" width="38.0" height="70.6" fill="#2563eb"/>
+<text x="775.0" y="415" text-anchor="middle" font-family="Arial" font-size="11" fill="#334155">max_contador_aberturas</text>
+<rect x="75" y="460" width="12" height="12" fill="#2563eb"/>
+<text x="92" y="470" font-family="Arial" font-size="11" fill="#334155">servidor_web</text>
+</svg>
